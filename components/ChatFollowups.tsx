@@ -67,6 +67,31 @@ export function ChatFollowups({ ctx }: { ctx: WizardCtx }) {
     }
   }
 
+  async function useDemoAnswers() {
+    if (busy) return
+    const demoMsg = 'Yes, my partner has seen me stop breathing at night. I have a high chance of dozing while reading, watching TV, as a passenger in a car for an hour, and lying down in the afternoon. I sometimes doze after lunch, but I usually stay awake when talking to someone.'
+    setError(null)
+    setMsgs(m => [...m, { role: 'user', content: demoMsg }])
+    setBusy(true)
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: ctx.sessionId, message: demoMsg }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      if (Array.isArray(data.covered)) setCovered(data.covered)
+      ctx.next()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'chat failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const hasAnsweredFollowup = msgs.some(m => m.role === 'user')
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
       <Card className="p-6 space-y-4">
@@ -80,16 +105,28 @@ export function ChatFollowups({ ctx }: { ctx: WizardCtx }) {
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
         {!done && (
-          <div className="flex gap-2">
-            <input
-              className="flex-1 p-3 border border-slate-300 rounded bg-white text-slate-900 placeholder:text-slate-400"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && send()}
-              placeholder="Type your answer..."
-              disabled={busy}
-            />
-            <Button onClick={send} disabled={busy || !input.trim()}>Send</Button>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                className="flex-1 p-3 border border-slate-300 rounded bg-white text-slate-900 placeholder:text-slate-400"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && send()}
+                placeholder="Type your answer..."
+                disabled={busy}
+              />
+              <Button onClick={send} disabled={busy || !input.trim()}>Send</Button>
+            </div>
+            {msgs.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button onClick={useDemoAnswers} disabled={busy} variant="secondary" className="w-full">
+                  Use demo answers
+                </Button>
+                <Button onClick={ctx.next} disabled={busy || !hasAnsweredFollowup} variant="outline" className="w-full">
+                  Continue to sleep data
+                </Button>
+              </div>
+            )}
           </div>
         )}
         {done && (

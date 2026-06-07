@@ -3,13 +3,14 @@
 ## 3-minute flow
 
 1. Start on the home page and explain the promise: NightCanary helps a patient prepare a clearer GP conversation about possible obstructive sleep apnoea.
-2. Open the assessment and record or type a short symptom story: loud snoring, daytime exhaustion, morning headaches, and a partner noticing pauses in breathing.
-3. Show the structured about-you form: BMI, neck circumference, age, sex, and blood pressure are captured deterministically instead of guessed by the model.
-4. Let the AI ask one or two follow-up questions and point out the clinical coverage checklist.
-5. Use the seeded moderate-OSA oximetry sample if the live ring is not connected.
-6. Show the result screen: risk band, oxygen trace, deterministic scores, plain-English explanation, and the GP letter.
-7. Click **Read summary** or **Read aloud** to demonstrate ElevenLabs voice. If the ElevenLabs key is missing, the browser fallback still proves the voice interaction.
-8. End on the safety line: this is not a diagnosis; it is a patient-prepared referral aid.
+2. Click **Test voice** on the home page to prove ElevenLabs is wired before starting the long flow.
+3. Open the assessment and record or type a short symptom story: loud snoring, daytime exhaustion, morning headaches, and a partner noticing pauses in breathing.
+4. On the structured about-you form, use **Use demo profile** for the fast path, then explain that BMI, neck circumference, age, sex, and blood pressure are captured deterministically instead of guessed by the model.
+5. In follow-ups, either answer normally or click **Use demo answers** to seed Epworth/sleepiness answers and move quickly.
+6. Use **Use demo sleep sample** if the live ring is not connected.
+7. Show the result screen: risk band, oxygen trace, deterministic scores, plain-English explanation, and the GP letter.
+8. Click **Read summary** or **Read aloud** to demonstrate ElevenLabs voice. If the ElevenLabs key is missing, the browser fallback still proves the voice interaction.
+9. End on the safety line: this is not a diagnosis; it is a patient-prepared referral aid.
 
 ## Judge questions
 

@@ -58,6 +58,19 @@ export function AboutYouStep({ ctx }: { ctx: WizardCtx }) {
 
   const canSubmit = age && sex && bmi !== null && highBP
 
+  function useDemoProfile() {
+    setAge('56')
+    setSex('male')
+    setUnit('metric')
+    setHeightCm('175')
+    setWeightKg('110')
+    setFeet('')
+    setInches('')
+    setPounds('')
+    setNeckCm('42')
+    setHighBP('yes')
+  }
+
   async function submit() {
     setError(null)
     setSubmitting(true)
@@ -98,6 +111,10 @@ export function AboutYouStep({ ctx }: { ctx: WizardCtx }) {
         These are the basic facts the assessment needs — a few seconds to fill in,
         and the conversation in the next step can focus on how you&apos;ve been feeling.
       </p>
+
+      <Button type="button" variant="secondary" onClick={useDemoProfile} className="w-full sm:w-auto">
+        Use demo profile
+      </Button>
 
       {/* Age */}
       <Field label="How old are you?" hint="Years">

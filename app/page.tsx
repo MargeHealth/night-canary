@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { ReadAloudButton } from '@/components/ReadAloudButton'
 import {
   Moon,
   Mic,
@@ -82,6 +83,13 @@ export default function Landing() {
                     See what OSA looks like
                   </Button>
                 </Link>
+                <ReadAloudButton
+                  text="NightCanary voice is ready. Your sleep screening summary and GP letter can be read aloud."
+                  label="Test voice"
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto"
+                />
               </div>
               <p className="mt-5 text-xs text-slate-500 max-w-md">
                 Not a diagnosis. Not a replacement for a doctor. A structured handoff between you and your GP.
@@ -130,7 +138,7 @@ export default function Landing() {
           <div className="text-center max-w-2xl mx-auto mb-10">
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">How it works</h2>
             <p className="mt-3 text-slate-600">
-              Three steps, one short conversation, one overnight recording. No login. No data leaves your session.
+              Symptoms, quick profile, one overnight recording. No login. No data leaves your session.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">

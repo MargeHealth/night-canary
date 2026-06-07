@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       if (a.highBP != null) aboutCodes.push('P')
     }
 
-    const MAX_USER_TURNS = 9  // STO + 2-3 Epworth + a couple of refinements
+    const MAX_USER_TURNS = 5  // STO + 2-3 Epworth; keep the demo path short
     const turnsRemaining = Math.max(0, MAX_USER_TURNS - userTurns)
 
     // Build a focused system prompt: skip what the form covered, focus on STO + Epworth.

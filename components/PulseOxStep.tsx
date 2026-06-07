@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Upload, Sparkles } from 'lucide-react'
+import { Upload, Sparkles, Activity } from 'lucide-react'
 import type { WizardCtx } from './Wizard'
 
 export function PulseOxStep({ ctx }: { ctx: WizardCtx }) {
@@ -55,21 +55,21 @@ export function PulseOxStep({ ctx }: { ctx: WizardCtx }) {
         or try a sample to see how it works.
       </p>
 
-      <label className="block">
-        <input type="file" accept=".csv" onChange={onFile} className="hidden" />
-        <span className="cursor-pointer block">
-          <span className="inline-flex items-center justify-center w-full h-10 px-4 py-2 text-sm font-medium rounded-md border border-slate-300 bg-white text-slate-900 hover:bg-slate-50">
-            <Upload className="w-4 h-4 mr-2" />Upload CSV
-          </span>
-        </span>
-      </label>
+      <Button onClick={() => loadDemoSample('moderate-osa')} disabled={busy} size="lg" className="w-full">
+        <Activity className="w-4 h-4 mr-2" />Use demo sleep sample
+      </Button>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label className="block">
+          <input type="file" accept=".csv" onChange={onFile} className="hidden" />
+          <span className="cursor-pointer block">
+            <span className="inline-flex items-center justify-center w-full h-10 px-4 py-2 text-sm font-medium rounded-md border border-slate-300 bg-white text-slate-900 hover:bg-slate-50">
+              <Upload className="w-4 h-4 mr-2" />Upload CSV
+            </span>
+          </span>
+        </label>
         <Button variant="secondary" onClick={() => loadDemoSample('normal')} disabled={busy}>
-          <Sparkles className="w-4 h-4 mr-2" />Sample: normal night
-        </Button>
-        <Button variant="secondary" onClick={() => loadDemoSample('moderate-osa')} disabled={busy}>
-          <Sparkles className="w-4 h-4 mr-2" />Sample: moderate OSA
+          <Sparkles className="w-4 h-4 mr-2" />Use normal sample
         </Button>
       </div>
 
