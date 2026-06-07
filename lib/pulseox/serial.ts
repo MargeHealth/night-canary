@@ -1,6 +1,10 @@
 import type { PulseOxReading } from './types'
+import {
+  parseMargeVitalsPayload,
+  type MargeVitalsReading,
+} from './marge-relay'
 
-type SerialLike = {
+export type SerialLike = {
   readable: ReadableStream<Uint8Array> | null
   open: (opts: { baudRate: number }) => Promise<void>
   close: () => Promise<void>
@@ -44,6 +48,71 @@ export async function connectPulseOxSerial(
   })()
 
   return port
+}
+
+export async function connectMargeVitalsSerial(
+  onPacket: (packet: MargeVitalsReading) => void,
+  onLog?: (line: string) => void,
+): Promise<SerialLike> {
+  if (typeof navigator === 'undefined' || !('serial' in navigator)) {
+    throw new Error('Web Serial not supported — use Chrome or Edge on desktop')
+  }
+
+  const port = await (navigator as SerialNavigator).serial.requestPort()
+  await port.open({ baudRate: 115200 })
+
+  const decoder = new TextDecoder()
+  let textBuffer = ''
+
+  void (async () => {
+    if (!port.readable) return
+    const reader = port.readable.getReader()
+    try {
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        if (!value) continue
+
+        textBuffer += decoder.decode(value, { stream: true })
+        const lines = textBuffer.split(/\r?\n/)
+        textBuffer = lines.pop() ?? ''
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim()
+          if (!line) continue
+          onLog?.(line)
+
+          const jsonText = extractJsonObject(line)
+          if (!jsonText) continue
+
+          try {
+            const parsed = parseMargeVitalsPayload(JSON.parse(jsonText))
+            if (parsed) onPacket(parsed)
+          } catch {
+            // Ignore non-JSON debug lines from the firmware.
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+  })()
+
+  return port
+}
+
+function extractJsonObject(line: string): string | null {
+  const sentPrefix = 'Sent:'
+  const jsonStart = line.startsWith(sentPrefix)
+    ? line.indexOf('{', sentPrefix.length)
+    : line.indexOf('{')
+
+  if (jsonStart < 0) return null
+
+  const jsonEnd = line.lastIndexOf('}')
+  if (jsonEnd <= jsonStart) return null
+
+  return line.slice(jsonStart, jsonEnd + 1)
 }
 
 /**

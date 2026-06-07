@@ -21,6 +21,7 @@ import { computeOdi } from '@/lib/clinical/odi'
 import { computeSpo2Stats } from '@/lib/clinical/spo2-stats'
 import { downloadCsv } from '@/lib/pulseox/csv-export'
 import { parseCsv } from '@/lib/pulseox/csv'
+import { connectMargeVitalsSerial, type SerialLike } from '@/lib/pulseox/serial'
 import {
   DEFAULT_MARGE_VITALS_WS_URL,
   parseMargeVitalsPayload,
@@ -42,16 +43,20 @@ const VITALS_WS_URL = process.env.NEXT_PUBLIC_VITALS_WS_URL || DEFAULT_MARGE_VIT
 export function ScreeningDashboard() {
   const [relayStatus, setRelayStatus] = useState<RelayStatus>('idle')
   const [relayError, setRelayError] = useState<string | null>(null)
+  const [usbStatus, setUsbStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle')
+  const [usbError, setUsbError] = useState<string | null>(null)
   const [lastEvent, setLastEvent] = useState('Not connected')
   const [latest, setLatest] = useState<MargeVitalsReading | null>(null)
   const [readings, setReadings] = useState<PulseOxReading[]>([])
   const [packets, setPackets] = useState<PacketRow[]>([])
   const wsRef = useRef<WebSocket | null>(null)
+  const serialRef = useRef<SerialLike | null>(null)
   const demoLoadedRef = useRef(false)
 
   useEffect(() => {
     return () => {
       wsRef.current?.close()
+      void serialRef.current?.close()
     }
   }, [])
 
@@ -63,6 +68,16 @@ export function ScreeningDashboard() {
   const validReading = latestPayload?.validReading === true
   const noFinger = latestPayload?.validReading === false
   const estimatedCount = readings.filter(r => r.estimated).length
+
+  const ingestPacket = useCallback((parsed: MargeVitalsReading, source: 'relay' | 'usb') => {
+    setLatest(parsed)
+    setLastEvent(parsed.reading ? `Vitals packet received by ${source.toUpperCase()}` : `${source.toUpperCase()} packet received: ${parsed.status}`)
+    setPackets(prev => [{ timestamp: Date.now(), payload: parsed.payload, parsed }, ...prev].slice(0, 12))
+
+    if (parsed.reading) {
+      setReadings(prev => [...prev, parsed.reading as PulseOxReading].slice(-7200))
+    }
+  }, [])
 
   function connectRelay() {
     setRelayError(null)
@@ -83,13 +98,7 @@ export function ScreeningDashboard() {
         const parsed = parseMargeVitalsPayload(data)
         if (!parsed) return
 
-        setLatest(parsed)
-        setLastEvent(parsed.reading ? 'Vitals packet received' : `Relay packet received: ${parsed.status}`)
-        setPackets(prev => [{ timestamp: Date.now(), payload: parsed.payload, parsed }, ...prev].slice(0, 12))
-
-        if (parsed.reading) {
-          setReadings(prev => [...prev, parsed.reading as PulseOxReading].slice(-7200))
-        }
+        ingestPacket(parsed, 'relay')
       } catch {
         setLastEvent('Ignored non-vitals relay message')
       }
@@ -123,6 +132,38 @@ export function ScreeningDashboard() {
     wsRef.current = null
     setRelayStatus('idle')
     setLastEvent('Disconnected from relay')
+  }
+
+  async function connectUsb() {
+    setUsbError(null)
+    setUsbStatus('connecting')
+    setLastEvent('Choose the XIAO ESP32C3 USB serial port.')
+
+    try {
+      const port = await connectMargeVitalsSerial(
+        packet => ingestPacket(packet, 'usb'),
+        line => {
+          if (line.includes('WiFi connection failed')) {
+            setLastEvent('USB connected. Firmware is in USB mode while Wi-Fi relay is unavailable.')
+          }
+        }
+      )
+      serialRef.current = port
+      setUsbStatus('connected')
+      setLastEvent('USB serial connected. Waiting for firmware vitals JSON.')
+    } catch (err) {
+      setUsbStatus('error')
+      setUsbError(err instanceof Error ? err.message : 'USB serial connection failed')
+    }
+  }
+
+  async function disconnectUsb() {
+    try {
+      await serialRef.current?.close()
+    } catch {}
+    serialRef.current = null
+    setUsbStatus('idle')
+    setLastEvent('Disconnected from USB serial')
   }
 
   const applyDemoReadings = useCallback((sample: PulseOxReading[]) => {
@@ -192,6 +233,9 @@ export function ScreeningDashboard() {
             <Link href="/assess" className="hidden sm:block">
               <Button variant="outline" size="sm">Assessment</Button>
             </Link>
+            <Button size="sm" variant="outline" onClick={connectUsb} disabled={usbStatus === 'connecting' || usbStatus === 'connected'}>
+              USB
+            </Button>
             <Button size="sm" onClick={connectRelay} disabled={!canConnect}>
               <Radio className="mr-2 h-3.5 w-3.5" />
               Connect
@@ -204,6 +248,7 @@ export function ScreeningDashboard() {
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_0.9fr]">
           <div>
             <Badge className={statusBadgeClass(relayStatus)}>{relayStatus}</Badge>
+            {usbStatus === 'connected' && <Badge className="ml-2 bg-teal-100 text-teal-800">usb</Badge>}
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
               Live sleep screening monitor
             </h1>
@@ -280,6 +325,9 @@ export function ScreeningDashboard() {
           <Button variant="outline" onClick={disconnectRelay} disabled={!connected} className="lg:col-span-1">
             Disconnect
           </Button>
+          <Button variant="outline" onClick={usbStatus === 'connected' ? disconnectUsb : connectUsb} disabled={usbStatus === 'connecting'} className="lg:col-span-1">
+            {usbStatus === 'connected' ? 'Disconnect USB' : 'Connect USB'}
+          </Button>
           <Button variant="secondary" onClick={loadDemoPattern} className="lg:col-span-1">
             <Activity className="mr-2 h-4 w-4" />
             Demo pattern
@@ -297,6 +345,11 @@ export function ScreeningDashboard() {
         {relayError && (
           <Card className="mb-6 border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {relayError}
+          </Card>
+        )}
+        {usbError && (
+          <Card className="mb-6 border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {usbError}
           </Card>
         )}
 

@@ -1,10 +1,11 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Upload, Sparkles, Activity, Radio, Square } from 'lucide-react'
 import type { WizardCtx } from './Wizard'
 import type { PulseOxReading } from '@/lib/pulseox/types'
+import { connectMargeVitalsSerial, type SerialLike } from '@/lib/pulseox/serial'
 import {
   DEFAULT_MARGE_VITALS_WS_URL,
   parseMargeVitalsPayload,
@@ -21,11 +22,21 @@ export function PulseOxStep({ ctx }: { ctx: WizardCtx }) {
   const [uploaded, setUploaded] = useState<number | null>(null)
   const [relayStatus, setRelayStatus] = useState<RelayStatus>('idle')
   const [relayError, setRelayError] = useState<string | null>(null)
+  const [usbStatus, setUsbStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle')
+  const [usbError, setUsbError] = useState<string | null>(null)
   const [latestPayload, setLatestPayload] = useState<MargeVitalsPayload | null>(null)
   const [latestReading, setLatestReading] = useState<PulseOxReading | null>(null)
   const [liveReadings, setLiveReadings] = useState<PulseOxReading[]>([])
   const [lastEvent, setLastEvent] = useState<string>('Not connected')
   const wsRef = useRef<WebSocket | null>(null)
+  const serialRef = useRef<SerialLike | null>(null)
+
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close()
+      void serialRef.current?.close()
+    }
+  }, [])
 
   async function upload(csv: string) {
     setBusy(true)
@@ -161,6 +172,42 @@ export function PulseOxStep({ ctx }: { ctx: WizardCtx }) {
     setLastEvent('Disconnected from relay')
   }
 
+  async function connectUsbRing() {
+    setUsbError(null)
+    setUsbStatus('connecting')
+    setLastEvent('Choose the XIAO ESP32C3 USB serial port.')
+
+    try {
+      const port = await connectMargeVitalsSerial(packet => {
+        setLatestPayload(packet.payload)
+        setLastEvent(packet.reading ? 'USB vitals packet received' : `USB packet received: ${packet.status}`)
+
+        if (packet.reading) {
+          setLatestReading(packet.reading)
+          setLiveReadings(prev => {
+            const next = [...prev, packet.reading as PulseOxReading]
+            return next.slice(-7200)
+          })
+        }
+      })
+      serialRef.current = port
+      setUsbStatus('connected')
+      setLastEvent('USB serial connected. Waiting for firmware vitals JSON.')
+    } catch (err) {
+      setUsbStatus('error')
+      setUsbError(err instanceof Error ? err.message : 'USB serial connection failed')
+    }
+  }
+
+  async function disconnectUsbRing() {
+    try {
+      await serialRef.current?.close()
+    } catch {}
+    serialRef.current = null
+    setUsbStatus('idle')
+    setLastEvent('Disconnected from USB serial')
+  }
+
   const canConnect = relayStatus === 'idle' || relayStatus === 'error'
   const connected = relayStatus === 'connected' || relayStatus === 'recording'
   const latestSpo2 = latestReading?.spo2 ?? null
@@ -182,17 +229,27 @@ export function PulseOxStep({ ctx }: { ctx: WizardCtx }) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <h3 className="text-sm font-semibold text-slate-900">Live Marge Health ring</h3>
-            <p className="text-xs text-slate-500">Streams ESP32/MAX30105 vitals from the Cloudflare relay.</p>
+            <p className="text-xs text-slate-500">Streams ESP32/MAX30105 vitals from Cloudflare relay or direct USB serial.</p>
           </div>
-          <span className={`text-xs font-medium px-2 py-1 rounded-full w-fit ${
-            relayStatus === 'recording' ? 'bg-red-100 text-red-700' :
-            connected ? 'bg-emerald-100 text-emerald-700' :
-            relayStatus === 'connecting' ? 'bg-amber-100 text-amber-700' :
-            relayStatus === 'error' ? 'bg-red-100 text-red-700' :
-            'bg-white text-slate-500 border border-slate-200'
-          }`}>
-            {relayStatus}
-          </span>
+          <div className="flex flex-wrap gap-2">
+            <span className={`text-xs font-medium px-2 py-1 rounded-full w-fit ${
+              relayStatus === 'recording' ? 'bg-red-100 text-red-700' :
+              connected ? 'bg-emerald-100 text-emerald-700' :
+              relayStatus === 'connecting' ? 'bg-amber-100 text-amber-700' :
+              relayStatus === 'error' ? 'bg-red-100 text-red-700' :
+              'bg-white text-slate-500 border border-slate-200'
+            }`}>
+              relay {relayStatus}
+            </span>
+            <span className={`text-xs font-medium px-2 py-1 rounded-full w-fit ${
+              usbStatus === 'connected' ? 'bg-teal-100 text-teal-800' :
+              usbStatus === 'connecting' ? 'bg-amber-100 text-amber-700' :
+              usbStatus === 'error' ? 'bg-red-100 text-red-700' :
+              'bg-white text-slate-500 border border-slate-200'
+            }`}>
+              usb {usbStatus}
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -217,6 +274,15 @@ export function PulseOxStep({ ctx }: { ctx: WizardCtx }) {
           </Button>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <Button type="button" variant="secondary" onClick={connectUsbRing} disabled={usbStatus === 'connecting' || usbStatus === 'connected'}>
+            Connect USB ring
+          </Button>
+          <Button type="button" variant="outline" onClick={disconnectUsbRing} disabled={usbStatus !== 'connected'}>
+            Disconnect USB
+          </Button>
+        </div>
+
         <Button type="button" onClick={() => uploadReadings(liveReadings)} disabled={busy || liveReadings.length < 5} className="w-full">
           Use live ring readings
         </Button>
@@ -225,6 +291,7 @@ export function PulseOxStep({ ctx }: { ctx: WizardCtx }) {
           <p>{lastEvent}</p>
           {latestReading?.estimated && <p>SpO2 is using the firmware estimate while the sensor calibrates. Strong finger placement improves validated readings.</p>}
           {relayError && <p className="text-red-600">{relayError}</p>}
+          {usbError && <p className="text-red-600">{usbError}</p>}
         </div>
       </div>
 
