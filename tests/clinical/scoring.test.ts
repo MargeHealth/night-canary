@@ -5,6 +5,7 @@ import { computeSpo2Stats } from '@/lib/clinical/spo2-stats'
 import { scoreStopBang, type StopBangAnswers } from '@/lib/clinical/stopbang'
 import { scoreEpworth } from '@/lib/clinical/epworth'
 import { combineRisk } from '@/lib/clinical/risk'
+import { parseMargeVitalsPayload } from '@/lib/pulseox/marge-relay'
 import type { PulseOxReading } from '@/lib/pulseox/types'
 
 function readings(values: number[]): PulseOxReading[] {
@@ -21,6 +22,65 @@ describe('parseCsv', () => {
 
   it('throws on missing required columns', () => {
     expect(() => parseCsv('time,spo2\n1,97')).toThrow(/required columns/)
+  })
+})
+
+describe('parseMargeVitalsPayload', () => {
+  it('uses validated SpO2 when the firmware marks it valid', () => {
+    const parsed = parseMargeVitalsPayload({
+      bpm: 72.2,
+      avgBpm: 70,
+      spo2Valid: true,
+      spo2: 96.3,
+      spo2Estimate: 92.4,
+      spo2Status: 'valid',
+      validReading: true,
+    }, 1700000000000)
+
+    expect(parsed?.displaySpo2).toBe(96.3)
+    expect(parsed?.estimated).toBe(false)
+    expect(parsed?.reading).toEqual({
+      timestamp: 1700000000000,
+      spo2: 96.3,
+      pulseRate: 70,
+      source: 'marge-relay',
+      estimated: false,
+    })
+  })
+
+  it('uses the estimate while the MAX30105 is calibrating instead of treating null as zero', () => {
+    const parsed = parseMargeVitalsPayload({
+      bpm: 47.2,
+      avgBpm: 66,
+      spo2Valid: false,
+      spo2: null,
+      spo2Estimate: 92.4,
+      spo2Status: 'calibrating',
+      sampleProgress: 42,
+      validReading: true,
+    }, 1700000004000)
+
+    expect(parsed?.displaySpo2).toBe(92.4)
+    expect(parsed?.status).toBe('calibrating')
+    expect(parsed?.reading).toMatchObject({
+      timestamp: 1700000004000,
+      spo2: 92.4,
+      pulseRate: 66,
+      source: 'marge-relay',
+      estimated: true,
+    })
+  })
+
+  it('does not create a reading when the sensor reports no valid finger signal', () => {
+    const parsed = parseMargeVitalsPayload({
+      bpm: 0,
+      spo2Valid: false,
+      spo2: null,
+      spo2Estimate: null,
+      validReading: false,
+    })
+
+    expect(parsed?.reading).toBeNull()
   })
 })
 
