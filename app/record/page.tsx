@@ -4,13 +4,14 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Activity, Play, Square, Download, Trash2, Smartphone, ArrowRight, Heart } from 'lucide-react'
+import { Play, Square, Download, Trash2, Smartphone, ArrowRight, Heart } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, Tooltip } from 'recharts'
 import { connectPulseOxSerial } from '@/lib/pulseox/serial'
 import { computeOdi } from '@/lib/clinical/odi'
 import { computeSpo2Stats } from '@/lib/clinical/spo2-stats'
 import { downloadCsv } from '@/lib/pulseox/csv-export'
 import type { PulseOxReading } from '@/lib/pulseox/types'
+import { BrandLogo } from '@/components/BrandLogo'
 
 const STORAGE_KEY = 'nightcanary.recording.v1'
 const PERSIST_INTERVAL_MS = 5000
@@ -135,6 +136,7 @@ export default function RecordPage() {
     return (
       <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
         <div className="max-w-2xl mx-auto px-4 py-10">
+          <BrandLogo compact className="mb-6" />
           <h1 className="text-2xl font-semibold text-slate-900 mb-4">Recording requires desktop</h1>
           <Card className="p-6 space-y-4">
             <div className="flex items-start gap-3">
@@ -165,10 +167,7 @@ export default function RecordPage() {
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <header className="mb-6">
-          <div className="flex items-center gap-2 text-slate-500 mb-2">
-            <Activity className="w-5 h-5" />
-            <span className="text-sm font-medium">NightCanary recording</span>
-          </div>
+          <BrandLogo compact subtitle="Recording" className="mb-4" />
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
             Record your overnight oxygen
           </h1>

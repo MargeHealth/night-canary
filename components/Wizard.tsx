@@ -1,6 +1,7 @@
 'use client'
 import { useState, ReactNode } from 'react'
 import { Progress } from '@/components/ui/progress'
+import { BrandLogo } from '@/components/BrandLogo'
 import { ChevronLeft } from 'lucide-react'
 
 export type WizardCtx = {
@@ -28,6 +29,12 @@ export function Wizard({ steps }: { steps: WizardStep[] }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <BrandLogo compact subtitle="Assessment" />
+          <span className="hidden rounded-full border border-teal-100 bg-white px-3 py-1 text-xs font-medium text-teal-800 shadow-sm sm:inline-flex">
+            GP-ready screening
+          </span>
+        </div>
         <Progress value={((idx + 1) / steps.length) * 100} className="mb-6" />
 
         {idx > 0 && (

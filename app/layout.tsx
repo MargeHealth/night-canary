@@ -13,8 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NightCanary — OSA Early Detection",
+  metadataBase: new URL("https://night-canary.heysalad-o.workers.dev"),
+  title: {
+    default: "NightCanary — Sleep Apnoea Screening",
+    template: "%s · NightCanary",
+  },
+  applicationName: "NightCanary",
   description: "Catch sleep apnoea before it catches you. A self-screening tool that prepares a structured letter for your GP.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
+  openGraph: {
+    title: "NightCanary — Sleep Apnoea Screening",
+    description: "Catch sleep apnoea before it catches you. A self-screening tool that prepares a structured letter for your GP.",
+    images: [{ url: "/brand/night-canary-mark.png", width: 512, height: 512, alt: "NightCanary crescent bird mark" }],
+  },
 };
 
 export default function RootLayout({

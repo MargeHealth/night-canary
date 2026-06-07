@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ReadAloudButton } from '@/components/ReadAloudButton'
+import { BrandLogo } from '@/components/BrandLogo'
 import {
-  Moon,
   Mic,
   Activity,
   FileText,
@@ -19,12 +19,7 @@ export default function Landing() {
       {/* ============ NAV ============ */}
       <nav className="border-b border-slate-200 bg-white/70 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center">
-              <Moon className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold tracking-tight text-slate-900">NightCanary</span>
-          </Link>
+          <BrandLogo compact />
           <div className="hidden sm:flex items-center gap-1 text-sm">
             <Link href="/compare" className="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100">
               Compare
@@ -240,8 +235,8 @@ export default function Landing() {
       <footer className="border-t border-slate-200 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex items-center gap-2">
-            <Moon className="w-3.5 h-3.5" />
-            <span>NightCanary · VibeHack London 2026</span>
+            <BrandLogo compact markClassName="h-6 w-6" textClassName="text-xs text-slate-600" />
+            <span>· VibeHack London 2026</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/compare" className="hover:text-slate-900">Compare</Link>

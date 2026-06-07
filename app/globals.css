@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
+  --brand: #0f766e;
+  --brand-dark: #115e59;
   color-scheme: light only;
 }
 
@@ -26,4 +28,8 @@ input, textarea, select {
 
 input::placeholder, textarea::placeholder {
   color: #94a3b8;
+}
+
+::selection {
+  background: rgba(15, 118, 110, 0.16);
 }

@@ -9,7 +9,8 @@ import { loadSample } from '@/lib/pulseox/sample-data'
 import { computeOdi } from '@/lib/clinical/odi'
 import { computeSpo2Stats } from '@/lib/clinical/spo2-stats'
 import type { OvernightSession } from '@/lib/pulseox/types'
-import { ArrowRight, CheckCircle2, AlertTriangle, Moon } from 'lucide-react'
+import { BrandLogo } from '@/components/BrandLogo'
+import { ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 type Analysed = {
   session: OvernightSession
@@ -50,10 +51,7 @@ export default function ComparePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <div className="flex items-center gap-2 text-slate-500 mb-3">
-          <Moon className="w-5 h-5" />
-          <span className="text-sm font-medium">NightCanary</span>
-        </div>
+        <BrandLogo compact className="mb-4" />
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">
           What does sleep apnoea actually look like?
         </h1>
