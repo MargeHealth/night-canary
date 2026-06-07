@@ -27,6 +27,9 @@ export default function Landing() {
             <Link href="/record" className="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100">
               Record
             </Link>
+            <Link href="/screening" className="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+              Screening
+            </Link>
             <Link href="/assess" className="ml-1">
               <Button size="sm">Start check</Button>
             </Link>
@@ -241,6 +244,7 @@ export default function Landing() {
           <div className="flex items-center gap-4">
             <Link href="/compare" className="hover:text-slate-900">Compare</Link>
             <Link href="/record" className="hover:text-slate-900">Record</Link>
+            <Link href="/screening" className="hover:text-slate-900">Screening</Link>
             <Link href="/assess" className="hover:text-slate-900">Assessment</Link>
           </div>
         </div>
